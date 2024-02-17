@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { Upload } from '@aws-sdk/lib-storage';
 import { client } from '../s3';
+import { db } from '../db';
+import { images } from '../db/schemas';
 
 export async function uploadRoutes(app: FastifyInstance) {
   app.post('/uploads', async (request, reply) => {
@@ -12,15 +14,13 @@ export async function uploadRoutes(app: FastifyInstance) {
       });
     }
 
-    // TODO
-    // gerar id
-    // gerar nome do arquivo - id + filename
+    const filename = `${new Date().getTime()}-${dataFile.filename}`;
 
     const upload = new Upload({
       client,
       params: {
         Bucket: 'vesp-simple-gallery',
-        Key: dataFile.filename,
+        Key: filename,
         Body: dataFile.file,
         ACL: 'public-read',
         ContentType: dataFile.mimetype
@@ -29,10 +29,19 @@ export async function uploadRoutes(app: FastifyInstance) {
 
     const { Location } = await upload.done();
 
-    // salvar no banco de dados - id - original filename - link do S3 - createdAt
+    if (!Location) {
+      return reply.status(400).send({
+        message: 'Something went wrong in the image upload.'
+      });
+    }
+
+    const instertedImages = await db.insert(images).values({
+      fileLink: Location,
+      fileName: dataFile.filename
+    }).returning();
 
     return reply.status(201).send({ 
-      url: Location
+      image: instertedImages[0]
     });
   });
 }
