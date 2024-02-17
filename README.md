@@ -2,6 +2,10 @@
 
 - [x] Uploads route
 - [x] Upload file in S3
-- [ ] Save id and file link in DB
+- [x] Save id and file link in DB
 
-- [ ] List images route
+---
+
+- [x] List images route
+- [ ] Return all image links stored in the db
+- [ ] Order by creation date
