@@ -1,11 +1,6 @@
-// import util from 'node:util';
-// import fs from 'node:fs';
-// import { pipeline } from 'node:stream';
 import { FastifyInstance } from 'fastify';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { client } from '../s3';
-
-// const pump = util.promisify(pipeline);
 
 export async function uploadRoutes(app: FastifyInstance) {
   app.post('/uploads', async (request, reply) => {
@@ -16,25 +11,28 @@ export async function uploadRoutes(app: FastifyInstance) {
         message: 'A file must be provided.'
       });
     }
-    // await pump(dataFile.file, fs.createWriteStream(`./uploads/${dataFile.filename}`));
-
 
     // TODO
     // gerar id
     // gerar nome do arquivo - id + filename
 
-    
-    const result = await client.send(
-      new PutObjectCommand({
+    const upload = new Upload({
+      client,
+      params: {
         Bucket: 'vesp-simple-gallery',
         Key: dataFile.filename,
         Body: dataFile.file,
-        ACL: 'public-read'
-      })
-    );
+        ACL: 'public-read',
+        ContentType: dataFile.mimetype
+      }
+    });
+
+    const { Location } = await upload.done();
 
     // salvar no banco de dados - id - original filename - link do S3 - createdAt
 
-    return reply.status(201).send({ result });
+    return reply.status(201).send({ 
+      url: Location
+    });
   });
 }
