@@ -1,15 +1,29 @@
 import { FastifyInstance } from 'fastify';
-import { client } from '../s3';
-import { ListObjectsCommand } from '@aws-sdk/client-s3';
+import { db } from '../db';
+import { images } from '../db/schemas';
+import { desc } from 'drizzle-orm';
+import z from 'zod';
+
+const ITEMS_PER_PAGE = 2;
 
 export async function list(app: FastifyInstance) {
   app.get('/', async (request, reply) => {
-    const { Contents } = await client.send(
-      new ListObjectsCommand({
-        Bucket: 'vesp-simple-gallery',
-      })
-    );
+    const listImagesQuerySchema = z.object({
+      page: z.number().min(1).default(1)
+    });
 
-    return reply.send(Contents);
+    const { page } = listImagesQuerySchema.parse(request.query);
+
+    const result = await db.select()
+      .from(images)
+      .orderBy(
+        desc(images.createdAt)
+      )
+      .offset((page - 1) * ITEMS_PER_PAGE)
+      .limit(ITEMS_PER_PAGE);
+
+    return reply.send({
+      images: result
+    });
   });
 }
