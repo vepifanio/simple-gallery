@@ -4,6 +4,11 @@ import { client } from '../s3';
 import { db } from '../db';
 import { images } from '../db/schemas';
 
+const acceptedMimeTypes = [
+  'image/jpeg',
+  'image/png'
+];
+
 export async function uploadRoutes(app: FastifyInstance) {
   app.post('/uploads', async (request, reply) => {
     const dataFile = await request.file();
@@ -11,6 +16,12 @@ export async function uploadRoutes(app: FastifyInstance) {
     if (!dataFile) {
       return reply.status(400).send({
         message: 'A file must be provided.'
+      });
+    }
+
+    if (!acceptedMimeTypes.includes(dataFile.mimetype)) {
+      return reply.status(400).send({
+        message: 'The file must be a jpg/jpeg or png.'
       });
     }
 
