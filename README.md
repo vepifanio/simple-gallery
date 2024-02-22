@@ -10,3 +10,4 @@
 - [x] Return all image links stored in the db
 - [x] Order by creation date
 - [x] Add pagination
+- [ ] Add param page validation with zod
